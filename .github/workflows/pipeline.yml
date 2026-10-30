@@ -1,0 +1,49 @@
+name: Hello World CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: CI (Runs in GitHub Cloud on Pull Request)
+  # -------------------------------------------------------------
+  ci-test:
+    name: "CI: Code Validation & Test"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Test Python Script
+        run: |
+          python3 -m py_compile main.py
+          python3 main.py
+
+  # -------------------------------------------------------------
+  # Job 2: CD (Runs ONLY when PR is merged to main, on Homelab Server)
+  # -------------------------------------------------------------
+  cd-deploy:
+    name: "CD: Deploy to Homelab Server"
+    needs: ci-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code on Server
+        uses: actions/checkout@v4
+
+      - name: Execute on Homelab Hardware
+        run: |
+          echo "=========================================="
+          echo "🚀 Deploying to Homelab Server!"
+          echo "💻 Hostname: $(hostname)"
+          echo "👤 User: $(whoami)"
+          python3 main.py
+          echo "=========================================="
